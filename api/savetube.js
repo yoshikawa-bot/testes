@@ -2,10 +2,9 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   const youtubeUrl = req.url.split("url=")[1];
-  if (!youtubeUrl) return res.status(400).json({ success: false, message: "No URL provided" });
+  if (!youtubeUrl) return res.status(400).send("No URL provided");
 
   try {
-    // Prepare POST body exactly like the website
     const body = {
       url: youtubeUrl,
       from: "youtube-to-mp3-download-now"
@@ -22,13 +21,10 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-
-    return res.status(200).json({
-      success: true,
-      downloadUrl: data?.data?.downloadUrl || null
-    });
+    // Send only the download URL string
+    return res.status(200).send(data?.data?.downloadUrl || "Download URL not found");
 
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).send("Error fetching download URL");
   }
 }

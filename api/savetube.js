@@ -8,54 +8,50 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1️⃣ Get a random CDN
-    const cdnResp = await axios.get("https://media.savetube.me/api/random-cdn");
-    const cdn = cdnResp.data?.cdn || "cdn401.savetube.vip";
+    // Step 1: Get a random CDN
+    const cdnRes = await axios.get("https://ytube.savetube.me/api/random-cdn");
+    const cdn = cdnRes.data.cdn;
 
-    // 2️⃣ Get video info
-    const infoResp = await axios.post(
-      `https://${cdn}/v2/info`,
-      { url },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Origin: "https://y.savetube.me",
-          Referer: "https://y.savetube.me",
-        },
-      }
-    );
-    const key = infoResp.data?.data;
+    // Step 2: Get video info
+    const infoRes = await axios.post(`https://${cdn}/v2/info`, {
+      url: url,
+    }, {
+      headers: {
+        "Origin": "https://ytube.savetube.me",
+        "Referer": "https://ytube.savetube.me",
+        "Content-Type": "application/json"
+      },
+    });
+
+    const key = infoRes.data.data; // the key for download request
 
     if (!key) {
-      return res.status(500).json({ success: false, message: "Failed to get video key" });
+      return res.status(404).json({ success: false, message: "Download key not found" });
     }
 
-    // 3️⃣ Get download URL
-    const downloadResp = await axios.post(
-      `https://${cdn}/download`,
-      {
-        downloadType: "audio",
-        quality: "128",
-        key,
+    // Step 3: Request download URL
+    const downloadRes = await axios.post(`https://${cdn}/download`, {
+      downloadType: "audio",
+      quality: "128",
+      key: key
+    }, {
+      headers: {
+        "Origin": "https://ytube.savetube.me",
+        "Referer": "https://ytube.savetube.me",
+        "Content-Type": "application/json"
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Origin: "https://y.savetube.me",
-          Referer: "https://y.savetube.me",
-        },
-      }
-    );
+    });
 
-    const downloadUrl = downloadResp.data?.data?.downloadUrl || null;
+    const downloadUrl = downloadRes.data?.data?.downloadUrl || null;
 
     if (!downloadUrl) {
-      return res.status(500).json({ success: false, message: "Download URL not found" });
+      return res.status(404).json({ success: false, message: "Download URL not found" });
     }
 
     return res.status(200).json({ success: true, downloadUrl });
+
   } catch (err) {
-    console.error("Error fetching download URL:", err.message || err);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error(err.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error", error: err.message });
   }
 }

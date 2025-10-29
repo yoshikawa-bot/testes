@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+import axios from "axios";
 
 export default async function handler(req, res) {
   const { url } = req.query;
@@ -9,42 +9,45 @@ export default async function handler(req, res) {
 
   try {
     // 1️⃣ Get a random CDN
-    const cdnResp = await fetch("https://media.savetube.me/api/random-cdn");
-    const cdnData = await cdnResp.json();
-    const cdn = cdnData?.cdn || "cdn401.savetube.vip";
+    const cdnResp = await axios.get("https://media.savetube.me/api/random-cdn");
+    const cdn = cdnResp.data?.cdn || "cdn401.savetube.vip";
 
     // 2️⃣ Get video info
-    const infoResp = await fetch(`https://${cdn}/v2/info`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: "https://y.savetube.me",
-        Referer: "https://y.savetube.me",
-      },
-      body: JSON.stringify({ url }),
-    });
-    const infoData = await infoResp.json();
-    if (!infoData?.data) {
+    const infoResp = await axios.post(
+      `https://${cdn}/v2/info`,
+      { url },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://y.savetube.me",
+          Referer: "https://y.savetube.me",
+        },
+      }
+    );
+    const key = infoResp.data?.data;
+
+    if (!key) {
       return res.status(500).json({ success: false, message: "Failed to get video key" });
     }
-    const key = infoData.data; // encoded key from /v2/info
 
     // 3️⃣ Get download URL
-    const downloadResp = await fetch(`https://${cdn}/download`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: "https://y.savetube.me",
-        Referer: "https://y.savetube.me",
-      },
-      body: JSON.stringify({
+    const downloadResp = await axios.post(
+      `https://${cdn}/download`,
+      {
         downloadType: "audio",
         quality: "128",
         key,
-      }),
-    });
-    const downloadData = await downloadResp.json();
-    const downloadUrl = downloadData?.data?.downloadUrl || null;
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://y.savetube.me",
+          Referer: "https://y.savetube.me",
+        },
+      }
+    );
+
+    const downloadUrl = downloadResp.data?.data?.downloadUrl || null;
 
     if (!downloadUrl) {
       return res.status(500).json({ success: false, message: "Download URL not found" });
@@ -52,7 +55,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true, downloadUrl });
   } catch (err) {
-    console.error("Error fetching download URL:", err);
+    console.error("Error fetching download URL:", err.message || err);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }

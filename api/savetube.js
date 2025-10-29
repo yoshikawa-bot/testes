@@ -1,14 +1,17 @@
 import axios from "axios";
 
+// Hardcoded key from the network requests
+const key = "f70db03743f7f7374ba90586aa9463ae3ac70fa3";
+
 export default async function handler(req, res) {
   try {
-    const key = "f70db03743f7f7374ba90586aa9463ae3ac70fa3"; // Your hardcoded key
+    // POST to the CDN download endpoint using the hardcoded key
     const response = await axios.post(
       "https://cdn405.savetube.vip/download",
       {
         downloadType: "audio",
         quality: "128",
-        key: key,
+        key: key, // <-- using hardcoded key here
       },
       {
         headers: {

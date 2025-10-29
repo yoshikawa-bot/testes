@@ -1,30 +1,40 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  const youtubeUrl = req.url.split("url=")[1];
-  if (!youtubeUrl) return res.status(400).send("No URL provided");
-
   try {
-    const body = {
-      url: youtubeUrl,
-      from: "youtube-to-mp3-download-now"
-    };
+    const url = req.query.url;
+    if (!url) return res.status(400).json({ success: false, message: "No URL provided" });
 
-    const response = await fetch("https://cdn400.savetube.vip/download", {
-      method: "POST",
+    // 1️⃣ Get random CDN (optional, for simulation)
+    const cdnResponse = await fetch("https://media.savetube.me/api/random-cdn");
+    const cdnData = await cdnResponse.json();
+    const cdn = cdnData.cdn || "cdn402.savetube.vip";
+
+    // 2️⃣ Start the download (simulate the website flow)
+    const startDownloadURL = `https://${cdn}/mnt/data/v3/CRT6EsR39S/RPdVW6ArY/en/start-download-json?from=youtube-to-mp3-download-now&url=${encodeURIComponent(url)}`;
+    
+    const downloadResponse = await fetch(startDownloadURL, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
-        "Referer": "https://ytube.savetube.me",
-        "Origin": "https://ytube.savetube.me"
-      },
-      body: JSON.stringify(body)
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://ytube.savetube.me"
+      }
+    });
+    
+    const downloadData = await downloadResponse.json();
+
+    if (!downloadData?.data?.downloadUrl) {
+      return res.status(404).json({ success: false, message: "Download URL not found" });
+    }
+
+    // ✅ Return only the download URL
+    return res.status(200).json({
+      success: true,
+      downloadUrl: downloadData.data.downloadUrl
     });
 
-    const data = await response.json();
-    // Send only the download URL string
-    return res.status(200).send(data?.data?.downloadUrl || "Download URL not found");
-
-  } catch (err) {
-    return res.status(500).send("Error fetching download URL");
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
   }
 }

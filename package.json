@@ -1,8 +1,8 @@
 {
-  "name": "savetube-api",
+  "name": "dens-audio-api",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "node-fetch": "^2.6.12"
+    "axios": "^1.7.0"
   }
 }

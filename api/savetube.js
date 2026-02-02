@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   try {
     // POST to the CDN download endpoint using the hardcoded key
     const response = await axios.post(
-      "https://cdn405.savetube.vip/download",
+      "https://cdn400.savetube.vip/download",
       {
         downloadType: "audio",
         quality: "128",
